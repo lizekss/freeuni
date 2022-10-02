@@ -682,3 +682,17 @@ procdump(void)
     printf("\n");
   }
 }
+
+
+// return number of processes that aren't in an unused state
+int
+nproc()
+{
+  int result = 0;
+  for (int i = 0; i < NPROC; i++) {
+    struct proc p = proc[i];
+    if (p.state != UNUSED)
+      result++;
+  }
+  return result;
+}
