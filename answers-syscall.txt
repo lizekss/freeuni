@@ -12,5 +12,5 @@ it represents the system call number
 5. kernel crashed because it tries to read from unmapped memory 0
 scause value is 13 = "Load page fault", which confirms this
 
-6. ```p p->name``` printed "value optimized out"
-   so i couldn't answer this
+6. process name is "initcode"
+   process id is 1
