@@ -74,8 +74,25 @@ sys_sleep(void)
 int
 sys_pgaccess(void)
 {
-  // lab pgtbl: your code here.
-  return 0;
+  uint64 addr, bits;
+  int npages;
+  argaddr(0, &addr);
+  argint(1, &npages);
+  argaddr(2, &bits);
+  if (npages > 32) {
+    printf("pgaccess: number of pages cannot be more than 32\n");
+    return -1;
+  }
+  int buf = 0;
+  pagetable_t pagetable = myproc()->pagetable;
+  for (int i = 0; i < npages; i++) {
+    pte_t *pte = walk(pagetable, addr + i * PGSIZE, 0);
+    if (*pte & PTE_A) {
+      buf += 1 << i;
+      *pte &= ~(PTE_A);
+    }
+  }
+  return copyout(pagetable, bits, (char*)&buf, (uint64)sizeof(int));
 }
 #endif
 

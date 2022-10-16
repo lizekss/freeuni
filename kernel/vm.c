@@ -460,5 +460,5 @@ vmprint(pagetable_t pagetable)
 {
   printf("page table %p\n", pagetable);
   recursive_vmprint(pagetable, 1);
-  return 1;
+  return 0;
 }
