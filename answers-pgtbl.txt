@@ -1,0 +1,7 @@
+1. system calls like stat and fstat would also be sped up
+    because they read kernel data as well
+
+2. page 0: text
+   page 2: data
+   page 1: unused, so the user cannot read it (pte_v is clear)
+   third to last: heap (if 0-indexing)
