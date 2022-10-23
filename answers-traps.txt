@@ -1,6 +1,6 @@
 1. registers a0-a7 store arguments to functions. 13 was stored in a2
 
-2. f and g aren't explicitly called in main. the compiler precalculated and directly passed 12 (this is at line 26)
+2. f and g aren't called in main. the compiler precalculated and passed 12 (this is at line 26)
 
 3. printf is located at address 0000000000000630
 
