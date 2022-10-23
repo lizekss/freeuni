@@ -1,13 +1,13 @@
-1. registers a0-a7 store arguments to functions. 13 was stored in a2
+1. registers a0-a7 store arguments, 13 was stored in a2
 
-2. f and g aren't called in main. the compiler precalculated and passed 12 (this is at line 26)
+2. f and g weren't called in main. result 12 was directly passed 
 
 3. printf is located at address 0000000000000630
 
-4. ra should hold the return address so it will have value 38 (the next instruction to execute)
+4. ra should hold the return address so it will have value 38 (the next instruction)
 
 5. Output is "He110 World"
-   57616 in hex is 110
    for big-endian we would need i = 0x726c6400
+   57616 in hex is 110, would be the same 
 
-6. it will be assumed that value of y is in a2. so whatever is in a2 will be printed 
+6. it will be assumed that value of y is in a2, so contents of a2 will be printed
