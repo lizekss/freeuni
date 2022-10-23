@@ -81,7 +81,7 @@ usertrap(void)
     if (p->handler >= 0 && p->handler_returned) {
       p->nticks_passed += 1;
       if (p->nticks_passed == p->alarm_interval) {
-        memmove(p->saved_tf, p->trapframe, sizeof(struct trapframe));
+        *p->saved_tf = *p->trapframe;
         p->trapframe->epc = (uint64)p->handler;
         p->nticks_passed = 0;
         p->handler_returned = 0;
