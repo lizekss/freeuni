@@ -69,15 +69,19 @@ usertrap(void)
     // ok
   } else if (r_scause() == 13 || r_scause() == 15) {
     uint64 addr = r_stval();
-    printf("page fault: %p\n", addr);
-    void *mem = kalloc();
-    if(mem == 0){
+    //printf("page fault: %p\n", addr);
+    if (addr >= myproc()->sz || addr < p->trapframe->sp) {
       p->killed = 1;
     } else {
-      memset(mem, 0, PGSIZE);
-      if(mappages(p->pagetable, PGROUNDDOWN(addr), PGSIZE, (uint64)mem, PTE_R|PTE_U|PTE_W) != 0){
-        kfree(mem);
+      void *mem = kalloc();
+      if(mem == 0){
         p->killed = 1;
+      } else {
+        memset(mem, 0, PGSIZE);
+        if(mappages(p->pagetable, PGROUNDDOWN(addr), PGSIZE, (uint64)mem, PTE_R|PTE_U|PTE_W) != 0){
+          kfree(mem);
+          p->killed = 1;
+        }
       }
     }
   } else {
