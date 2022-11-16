@@ -62,7 +62,6 @@ void
 kfree(void *pa)
 {
   struct run *r;
-
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
 
@@ -71,7 +70,6 @@ kfree(void *pa)
   acquire(&kmem.lock);
   int idx = (uint64)r / PGSIZE;
   if (reference_count[idx] < 1) {
-    panic("kfree cow");
   }
   reference_count[idx]--;
   if (reference_count[idx] == 0) {
@@ -93,6 +91,8 @@ kalloc(void)
   acquire(&kmem.lock);
   r = kmem.freelist;
   if(r) {
+    if (reference_count[(uint64)r / PGSIZE] != 0)
+      panic("cow kalloc");
     reference_count[(uint64)r / PGSIZE] = 1;
     kmem.freelist = r->next;
   }

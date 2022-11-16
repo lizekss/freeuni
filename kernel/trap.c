@@ -32,6 +32,7 @@ trapinithart(void)
 int
 cowfault(pagetable_t pgtbl, uint64 addr)
 {
+
   if (addr >= MAXVA)
     return -1;
 
@@ -42,18 +43,25 @@ cowfault(pagetable_t pgtbl, uint64 addr)
     return -1;
   }
 
-  if ((*pte & PTE_U) == 0 || (*pte & PTE_V) == 0) {
+  if ((*pte & PTE_W) != 0)
+    return 0;
+
+  if ((*pte & PTE_U) == 0 || (*pte & PTE_V) == 0 || (*pte & RSW) == 0) {
     return -1;
   }
 
   pa1 = PTE2PA(*pte);
   if ((pa2 = (uint64)kalloc()) == 0) {
+    //panic("cow kalloc failed");
     return -1;
   }
 
-  memmove((void*)pa2, (void*)pa1, PGSIZE);
-  *pte = PA2PTE(pa2) | PTE_U | PTE_R | PTE_V | PTE_W | PTE_X;
+  //printf("before kfree\n");
 
+  memmove((void*)pa2, (void*)pa1, PGSIZE);
+  kfree((void*)pa1);
+  *pte = PA2PTE(pa2) | PTE_U | PTE_R | PTE_V | PTE_W | PTE_X;
+  *pte &= ~RSW;
   return 0;
 }
 //
