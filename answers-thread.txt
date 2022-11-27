@@ -1,0 +1,6 @@
+1. if two threads are inserting into the same bucket at the same time,
+one of them will assign 'table[i] = e', then the other one will reassign it to its own entry,
+so the first one will be lost.
+
+
+
