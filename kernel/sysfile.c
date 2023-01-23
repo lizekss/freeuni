@@ -503,3 +503,87 @@ sys_pipe(void)
   }
   return 0;
 }
+
+uint64
+sys_mmap(void)
+{
+  int len, perm, flags;
+  argint(1, &len);
+  argint(2, &perm);
+  argint(3, &flags);
+  struct file *f;
+  argfd(4, 0, &f);
+
+  if((flags & MAP_SHARED) && (perm & PROT_WRITE) && !f->writable)
+    return -1;
+
+  struct proc *p = myproc(); 
+  int i = 0;
+  while(i < 16 && p->vma[i].used)
+    i++;
+
+  if (i == 16)
+    return -1;
+    
+  p->sz += len;
+  struct vm_area *vma = p->vma + i;
+  
+  vma->used = 1;
+  vma->start = p->sz - len;
+  vma->end = PGROUNDUP(p->sz);
+  vma->flags = flags;
+  vma->perm = perm;
+  vma->f = f;
+  filedup(f);
+    
+  return vma->start;
+}
+
+uint64 
+sys_munmap(void)
+{
+  uint64 va;
+  int len;
+  argaddr(0, &va);
+  argint(1, &len);
+
+  va = PGROUNDDOWN(va);
+  struct proc *p = myproc();
+  struct vm_area *vma = p->vma;
+  for (int i = 0; i < 16; i++) {
+    if (vma->used && vma->start <= va && vma->end > va)
+      break;
+    if (i == 15)
+      return -1;
+    vma++;
+  }
+
+  // printf("here1\n");
+  if(vma->flags & MAP_SHARED){
+    begin_op();
+    ilock(vma->f->ip);
+    writei(vma->f->ip, 1, va, va - vma->start, len);
+    iunlock(vma->f->ip);
+    end_op();
+  }
+  
+  pte_t *pte = walk(p->pagetable, va, 0);
+  if (pte != 0 && (*pte & PTE_V) != 0) {
+    //printf("unmapping %p %d\n", va, len / PGSIZE);
+    uvmunmap(p->pagetable, va, len / PGSIZE, 1);
+  }
+
+  if (va == vma->start) {
+    vma->start = vma->start + len;
+  }
+  if (va + len == vma->end) {
+    vma->end = vma->end - len;
+  }
+  if (vma->start == vma->end) {
+    fileclose(vma->f);
+    vma->used = 0;
+  }
+  // printf("here3\n");
+  return 0;
+}
+

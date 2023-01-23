@@ -5,6 +5,11 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "sleeplock.h"
+#include "fcntl.h"
+#include "fs.h"
+#include "file.h"
+
 
 struct spinlock tickslock;
 uint ticks;
@@ -29,6 +34,43 @@ trapinithart(void)
   w_stvec((uint64)kernelvec);
 }
 
+int
+mmapfault(uint64 va) {
+  va = PGROUNDDOWN(va);
+  struct proc *p = myproc();
+  struct vm_area *vma = p->vma;
+  for (int i = 0; i < 16; i++) {
+    if (vma->used && vma->start <= va && vma->end > va)
+      break;
+    if (i == 15)
+      return -1;
+    vma++;
+  }
+  
+  void *addr = kalloc();
+  if (addr < 0) {
+    return -1;
+  }
+  memset(addr, 0, PGSIZE);
+  struct inode *ip = vma->f->ip; 
+  begin_op();
+  ilock(ip);
+  if (readi(ip, 0, (uint64)addr, va - vma->start, PGSIZE) < 0) {
+    iunlock(ip);
+    end_op();
+    return -1;
+  }
+  iunlock(ip);
+  end_op();
+  
+  if(mappages(p->pagetable, va, PGSIZE, (uint64)addr, PTE_U |PTE_R | PTE_W) != 0) {
+    //kfree(addr);
+    return -1;
+  } else {
+    //printf("mapped %p %d\n", va, PGSIZE);
+    return 0;
+  }
+}
 //
 // handle an interrupt, exception, or system call from user space.
 // called from trampoline.S
@@ -65,9 +107,14 @@ usertrap(void)
     intr_on();
 
     syscall();
+  }  else if (r_scause() == 13 || r_scause() == 15) {
+    if (mmapfault(r_stval()) < 0) {
+      // printf("killing\n");
+      p->killed = 1;
+    }
   } else if((which_dev = devintr()) != 0){
     // ok
-  } else {
+  }else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     setkilled(p);

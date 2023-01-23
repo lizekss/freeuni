@@ -308,6 +308,11 @@ fork(void)
       np->ofile[i] = filedup(p->ofile[i]);
   np->cwd = idup(p->cwd);
 
+  for (i = 0; i < 16; i++) {
+    np->vma[i] = p->vma[i];
+    if (np->vma[i].used)
+      filedup(np->vma[i].f);
+  }
   safestrcpy(np->name, p->name, sizeof(p->name));
 
   pid = np->pid;
